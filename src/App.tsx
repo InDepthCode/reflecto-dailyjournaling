@@ -1,5 +1,6 @@
 // @ts-ignore
 import React, { useState, useRef, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { MoonIcon, SunIcon } from './components/Icons';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
@@ -181,6 +182,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <Analytics />
       <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between mb-12">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
