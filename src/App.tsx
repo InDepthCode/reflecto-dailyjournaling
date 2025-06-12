@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { MoonIcon, SunIcon } from './components/Icons';
+import { SpeechToText } from './components/SpeechToText';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import type { JournalEntry } from './lib/supabase';
@@ -222,20 +223,27 @@ function App() {
 
         <form onSubmit={handleSubmit} className="mb-12">
           <div className="group relative">
+            <div className="absolute top-4 left-4 z-10">
+              <SpeechToText onTranscript={(text) => setContent(prev => prev + text)} />
+            </div>
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's on your mind today?"
-              className="w-full min-h-[150px] p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 
+              className="w-full min-h-[150px] max-h-[400px] p-6 pl-20 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
                 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
                 placeholder:text-gray-400 dark:placeholder:text-gray-500
-                resize-none transition-all duration-200
-                shadow-sm hover:shadow-md"
+                resize-none transition-all duration-200 overflow-y-auto
+                shadow-sm hover:shadow-md text-lg"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+              }}
             />
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-sm text-gray-400 dark:text-gray-500">
+            <div className="absolute bottom-4 right-4">
+              <span className="text-sm text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                 Press Enter to save
               </span>
             </div>
