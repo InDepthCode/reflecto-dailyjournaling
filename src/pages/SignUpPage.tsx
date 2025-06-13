@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import Modal from '../components/Modal';
 
 interface SignUpPageProps {
   onToggle: () => void;
@@ -14,6 +15,7 @@ export default function SignUpPage({ onToggle, onCancel }: SignUpPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   const { signUp } = useAuth();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -26,6 +28,17 @@ export default function SignUpPage({ onToggle, onCancel }: SignUpPageProps) {
       if (timer) clearInterval(timer);
     };
   }, [cooldownTime]);
+
+  // Automatically redirect to login after showing success modal
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        onToggle();
+      }, 15000); 
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal, onToggle]);
 
   const validatePassword = (password: string) => {
     const minLength = 6;
@@ -77,6 +90,7 @@ export default function SignUpPage({ onToggle, onCancel }: SignUpPageProps) {
     setIsLoading(true);
     try {
       await signUp(email, password);
+      setShowSuccessModal(true);
     } catch (err: any) {
       setError(err.message);
       if (err.message.includes('Too many signup attempts')) {
@@ -212,6 +226,18 @@ export default function SignUpPage({ onToggle, onCancel }: SignUpPageProps) {
           </div>
         </form>
       </div>
+      <Modal isOpen={showSuccessModal} onClose={() => { setShowSuccessModal(false); onToggle(); }}>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Account created successfully!</h3>
+          <p className="mb-4">Please confirm your account via the email sent to you.</p>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => { setShowSuccessModal(false); onToggle(); }}
+          >
+            Go to Login
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 } 

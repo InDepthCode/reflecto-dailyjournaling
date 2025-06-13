@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import Modal from '../components/Modal';
 
 interface SignInPageProps {
   onToggle: () => void;
@@ -12,6 +13,7 @@ export default function SignInPage({ onToggle, onCancel }: SignInPageProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,10 +22,13 @@ export default function SignInPage({ onToggle, onCancel }: SignInPageProps) {
 
     try {
       await signIn(email, password);
-      // After successful sign in, close the auth modal
       onCancel();
-    } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
+    } catch (err: any) {
+      if (err.message && err.message.toLowerCase().includes('confirm')) {
+        setShowConfirmModal(true);
+      } else {
+        setError('Failed to sign in. Please check your credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +122,18 @@ export default function SignInPage({ onToggle, onCancel }: SignInPageProps) {
           </div>
         </form>
       </div>
+      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Please confirm your account!</h3>
+          <p className="mb-4">Check your email for a confirmation link before logging in.</p>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            OK
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 } 

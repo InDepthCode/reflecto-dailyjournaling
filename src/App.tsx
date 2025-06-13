@@ -8,6 +8,7 @@ import { supabase } from './lib/supabase';
 import type { JournalEntry } from './lib/supabase';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
+import Modal from './components/Modal';
 
 interface GuestEntry {
   id: string;
@@ -28,6 +29,9 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, signOut, loading: authLoading } = useAuth();
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [showEmailConfirmedModal, setShowEmailConfirmedModal] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   // Load entries based on auth state
   useEffect(() => {
@@ -55,6 +59,25 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Check for email confirmation in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (params.get('type') === 'signup' && access_token && refresh_token) {
+      setIsAuthLoading(true);
+      supabase.auth.setSession({ access_token, refresh_token }).finally(() => {
+        setIsAuthLoading(false);
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('type') === 'signup' && access_token) {
+      setShowAuth(true);
+      setIsSignUp(false);
+      setShowEmailConfirmedModal(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const loadGuestEntries = () => {
     const sessionEntries = sessionStorage.getItem('guest-entries');
@@ -158,7 +181,7 @@ function App() {
     });
   };
 
-  if (authLoading) {
+  if (authLoading || isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -175,7 +198,21 @@ function App() {
         {isSignUp ? (
           <SignUpPage onToggle={() => setIsSignUp(false)} onCancel={() => setShowAuth(false)} />
         ) : (
-          <SignInPage onToggle={() => setIsSignUp(true)} onCancel={() => setShowAuth(false)} />
+          <>
+            <SignInPage onToggle={() => setIsSignUp(true)} onCancel={() => setShowAuth(false)} />
+            <Modal isOpen={showEmailConfirmedModal} onClose={() => setShowEmailConfirmedModal(false)}>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Email confirmed!</h3>
+                <p className="mb-4">Your email has been successfully confirmed. Please log in.</p>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => setShowEmailConfirmedModal(false)}
+                >
+                  OK
+                </button>
+              </div>
+            </Modal>
+          </>
         )}
       </div>
     );
@@ -231,13 +268,17 @@ function App() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's on your mind today?"
-              className="w-full min-h-[150px] max-h-[400px] p-6 pl-20 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
-                bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                placeholder:text-gray-400 dark:placeholder:text-gray-500
-                resize-none transition-all duration-200 overflow-y-auto
+              name="journal-entry"
+              autoComplete="new-password"
+              className="w-full min-h-[150px] max-h-[400px] p-6 pl-20 rounded-2xl border-2 border-gray-200 dark:border-gray-700 \
+                bg-white dark:bg-gray-800 text-gray-900\
+                focus:ring-2 focus:ring-blue-500 focus:border-transparent\
+                placeholder:text-gray-400 dark:placeholder:text-gray-300\
+                resize-none transition-all duration-200 overflow-y-auto\
                 shadow-sm hover:shadow-md text-lg"
               style={{
+                color: document.documentElement.classList.contains('dark') ? '#fff' : undefined,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#23272f' : undefined,
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
               }}
