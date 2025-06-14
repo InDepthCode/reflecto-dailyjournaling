@@ -390,7 +390,7 @@ function App() {
               </div>
               <button
                 type="submit"
-                className="mt-2 w-full text-lg font-bold tracking-wide border rounded-lg bg-[var(--color-accent)] text-white hover:opacity-90 transition"
+                className="mt-2 w-[30%] text-lg font-bold tracking-wide border rounded-lg bg-[var(--color-accent)] text-white hover:opacity-90 transition"
                 disabled={isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save Entry'}
