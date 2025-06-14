@@ -429,39 +429,40 @@ function App() {
                 </div>
               ))
             )}
-            {/* Navigation for previous/next day with entries */}
-            <div className="flex justify-between mt-6">
-              <button
-                type="button"
-                className="text-[var(--color-accent)] font-bold hover:underline"
-                onClick={() => {
-                  // Find previous day with entry
-                  const prev = entries
-                    .map(e => new Date(e.created_at))
-                    .filter(d => d < selectedDate)
-                    .sort((a, b) => b.getTime() - a.getTime())[0];
-                  if (prev) setSelectedDate(prev);
-                }}
-                disabled={entries.filter(e => new Date(e.created_at) < selectedDate).length === 0}
-              >
-                ← Previous
-              </button>
-              <button
-                type="button"
-                className="text-[var(--color-accent)] font-bold hover:underline"
-                onClick={() => {
-                  // Find next day with entry
-                  const next = entries
-                    .map(e => new Date(e.created_at))
-                    .filter(d => d > selectedDate)
-                    .sort((a, b) => a.getTime() - b.getTime())[0];
-                  if (next) setSelectedDate(next);
-                }}
-                disabled={entries.filter(e => new Date(e.created_at) > selectedDate).length === 0}
-              >
-                Next →
-              </button>
-            </div>
+            {entries.length > 5 && (
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  className="text-[var(--color-accent)] font-bold hover:underline"
+                  onClick={() => {
+                    // Find previous day with entry
+                    const prev = entries
+                      .map(e => new Date(e.created_at))
+                      .filter(d => d < selectedDate)
+                      .sort((a, b) => b.getTime() - a.getTime())[0];
+                    if (prev) setSelectedDate(prev);
+                  }}
+                  disabled={entries.filter(e => new Date(e.created_at) < selectedDate).length === 0}
+                >
+                  ← Previous
+                </button>
+                <button
+                  type="button"
+                  className="text-[var(--color-accent)] font-bold hover:underline"
+                  onClick={() => {
+                    // Find next day with entry
+                    const next = entries
+                      .map(e => new Date(e.created_at))
+                      .filter(d => d > selectedDate)
+                      .sort((a, b) => a.getTime() - b.getTime())[0];
+                    if (next) setSelectedDate(next);
+                  }}
+                  disabled={entries.filter(e => new Date(e.created_at) > selectedDate).length === 0}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
