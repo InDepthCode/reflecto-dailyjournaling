@@ -9,6 +9,12 @@ import type { JournalEntry } from './lib/supabase';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import Modal from './components/Modal';
+import PaymentPlans from './components/Payment';
+import Calendar from 'react-calendar';
+import type { CalendarType } from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import { Calendar as CalendarIcon } from 'react-feather';
+import './calendar-custom.css';
 
 interface GuestEntry {
   id: string;
@@ -32,6 +38,46 @@ function App() {
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [showEmailConfirmedModal, setShowEmailConfirmedModal] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{ name: string; price: number; features: string[] } | null>(null);
+  const [hasStartedJournaling, setHasStartedJournaling] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+
+  const plans = [
+    {
+      name: 'Free',
+      price: 0,
+      features: [
+        'Unlimited journal entries',
+        'Basic analytics',
+        'Light & dark mode',
+        'Export to PDF',
+      ],
+    },
+    {
+      name: 'Starter',
+      price: 100,
+      features: [
+        'All Free features',
+        'Priority email support',
+        'Daily mood tracking',
+        'Reminders & notifications',
+        'Custom tags & search',
+      ],
+    },
+    {
+      name: 'Pro',
+      price: 200,
+      features: [
+        'All Starter features',
+        'Advanced analytics',
+        'Collaboration tools',
+        'Cloud backup',
+        'Mobile app integration',
+      ],
+    },
+  ];
 
   // Load entries based on auth state
   useEffect(() => {
@@ -39,7 +85,8 @@ function App() {
       setShowAuth(false);
       fetchEntriesFromSupabase();
     } else {
-      loadGuestEntries();
+      // For guests, start with empty entries (no persistence)
+      setEntries([]);
     }
   }, [user]);
 
@@ -80,16 +127,12 @@ function App() {
   }, []);
 
   const loadGuestEntries = () => {
-    const sessionEntries = sessionStorage.getItem('guest-entries');
-    if (sessionEntries) {
-      setEntries(JSON.parse(sessionEntries));
-    } else {
-      setEntries([]);
-    }
+    // No longer load from sessionStorage - start fresh each time
+    setEntries([]);
   };
 
   const saveGuestEntries = (updatedEntries: GuestEntry[]) => {
-    sessionStorage.setItem('guest-entries', JSON.stringify(updatedEntries));
+    // Only update state, don't persist to sessionStorage
     setEntries(updatedEntries);
   };
 
@@ -115,6 +158,10 @@ function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || isSaving) return;
+
+    // Hide pricing when saving entry
+    setHasStartedJournaling(true);
+    setShowPricingModal(false);
 
     setIsSaving(true);
     try {
@@ -181,6 +228,41 @@ function App() {
     });
   };
 
+  // Handle content change and close pricing modal if open
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+    // Hide pricing when user starts typing
+    if (newContent.trim().length > 0 && !hasStartedJournaling) {
+      setHasStartedJournaling(true);
+      setShowPricingModal(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Hide pricing on any key press if not already hidden
+    if (!hasStartedJournaling) {
+      setHasStartedJournaling(true);
+      setShowPricingModal(false);
+    }
+  };
+
+  // Helper: get entries for selected date
+  const entriesForSelectedDate = entries.filter(entry => {
+    const entryDate = new Date(entry.created_at);
+    return (
+      entryDate.getFullYear() === selectedDate.getFullYear() &&
+      entryDate.getMonth() === selectedDate.getMonth() &&
+      entryDate.getDate() === selectedDate.getDate()
+    );
+  });
+
+  // Helper: get all entry dates for calendar highlight
+  const entryDates = entries.map(entry => {
+    const d = new Date(entry.created_at);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toDateString();
+  });
+
   if (authLoading || isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -219,126 +301,168 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <Analytics />
-      <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-            Reflecto
-          </h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200 text-gray-800 dark:text-gray-200"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <SunIcon /> : <MoonIcon />}
-            </button>
-            {user ? (
+    <div className={isDark ? 'dark' : ''}>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-bg-light)] dark:bg-[var(--color-bg-dark)] transition-colors duration-300">
+        <div className="w-full max-w-2xl mx-auto px-2 py-8">
+          <header className="flex flex-col items-center mb-10 relative">
+            <h1 className="text-4xl md:text-5xl font-extrabold font-serif tracking-tight mb-2 text-center" style={{ fontFamily: 'Merriweather, Georgia, serif', color: '#bfa76a' }}>Reflecto Diary</h1>
+            <div className="flex items-center gap-3 mt-2">
               <button
-                onClick={() => signOut()}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+                onClick={() => setIsDark(!isDark)}
+                className="p-2 rounded-full border border-[var(--color-accent)] bg-[var(--color-page-light)] dark:bg-[var(--color-page-dark)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition"
+                aria-label="Toggle theme"
               >
-                Sign out
+                {isDark ? <SunIcon /> : <MoonIcon />}
               </button>
-            ) : (
               <button
-                onClick={() => setShowAuth(true)}
-                className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                className="p-2 rounded-full border border-[var(--color-accent)] bg-[var(--color-page-light)] dark:bg-[var(--color-page-dark)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition"
+                onClick={() => setShowCalendarModal(true)}
+                aria-label="Open calendar"
               >
-                Sign in to save your entries
+                <CalendarIcon size={24} />
               </button>
-            )}
-          </div>
-        </header>
+              {user ? (
+                <button
+                  onClick={() => signOut()}
+                  className="px-4 py-2 text-base font-semibold border rounded-lg bg-transparent text-[var(--color-accent)] border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="px-4 py-2 text-base font-semibold border rounded-lg bg-transparent text-[var(--color-accent)] border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition"
+                >
+                  Sign in to save your entries
+                </button>
+              )}
+            </div>
+          </header>
 
-        {!user && (
-          <div className="mb-8 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200">
-            <p>You're in guest mode. Your entries will be saved until you close the browser. Sign in to keep them forever!</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="mb-12">
-          <div className="group relative">
-            <div className="absolute top-4 left-4 z-10">
-              <SpeechToText onTranscript={(text) => setContent(prev => prev + text)} />
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind today?"
-              name="journal-entry"
-              autoComplete="new-password"
-              className="w-full min-h-[150px] max-h-[400px] p-6 pl-20 rounded-2xl border-2 border-gray-200 dark:border-gray-700 \
-                bg-white dark:bg-gray-800 text-gray-900\
-                focus:ring-2 focus:ring-blue-500 focus:border-transparent\
-                placeholder:text-gray-400 dark:placeholder:text-gray-300\
-                resize-none transition-all duration-200 overflow-y-auto\
-                shadow-sm hover:shadow-md text-lg"
-              style={{
-                color: document.documentElement.classList.contains('dark') ? '#fff' : undefined,
-                backgroundColor: document.documentElement.classList.contains('dark') ? '#23272f' : undefined,
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
-              }}
-            />
-            <div className="absolute bottom-4 right-4">
-              <span className="text-sm text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                Press Enter to save
-              </span>
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={!content.trim() || isSaving}
-            className="mt-4 px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 
-              text-white font-medium shadow-md hover:shadow-lg 
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transform hover:-translate-y-0.5 active:translate-y-0
-              transition-all duration-200"
-          >
-            {isSaving ? 'Saving...' : 'Save Entry'}
-          </button>
-        </form>
-
-        <div className="space-y-6">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Loading entries...</p>
-            </div>
-          ) : entries.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                No entries yet. Start writing your thoughts above!
-              </p>
-            </div>
-          ) : (
-            entries.map((entry) => (
-              <div 
-                key={entry.id} 
-                className="group p-6 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md 
-                  transition-all duration-200 border border-gray-100 dark:border-gray-700"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <time className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    {formatDate(entry.created_at)}
-                  </time>
-                  <button
-                    onClick={() => deleteEntry(entry.id)}
-                    className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          {/* Calendar Modal */}
+          <Modal isOpen={showCalendarModal} onClose={() => setShowCalendarModal(false)} className="react-calendar-modal">
+            <div className="relative flex flex-col items-center p-6 md:p-10 bg-transparent">
+              <h2 className="text-lg font-serif font-bold mb-2 text-[var(--color-accent)]">Pick a date</h2>
+              <Calendar
+                onChange={(date) => {
+                  setSelectedDate(date as Date);
+                  setShowCalendarModal(false);
+                }}
+                value={selectedDate}
+                tileClassName={({ date }) =>
+                  entryDates.includes(date.toDateString()) ? 'bg-[var(--color-accent)] text-white rounded-full' : ''
+                }
+                className="custom-diary-calendar rounded-xl shadow-md border-none bg-[var(--color-page-light)] dark:bg-[var(--color-page-dark)]"
+                navigationLabel={({ label }) => (
+                  <span
+                    className="px-2 py-1 rounded font-bold text-[var(--color-accent)]"
+                    style={{ minWidth: '60px', textAlign: 'center', fontSize: '0.9rem' }}
                   >
-                    Delete
-                  </button>
-                </div>
-                <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
-                  {entry.content}
-                </p>
-              </div>
-            ))
+                    {label}
+                  </span>
+                )}
+              />
+            </div>
+          </Modal>
+
+          {!user && (
+            <div className="mb-8 diary-page text-[var(--color-accent)] text-center text-base">
+              <p>You're in guest mode. Your entries will be lost when you close or refresh the browser. Sign in to keep them forever!</p>
+            </div>
           )}
+
+          <div className="diary-page">
+            <form onSubmit={handleSubmit} className="mb-8">
+              <div className="group relative">
+                <div className="absolute top-4 left-4 z-10">
+                  <SpeechToText onTranscript={(text) => setContent(prev => prev + text)} />
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={handleContentChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Dear diary..."
+                  name="journal-entry"
+                  autoComplete="new-password"
+                  className="w-full diary-textarea pl-16 pr-4 placeholder:text-[var(--color-muted)] transition-all duration-200 overflow-y-auto"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                className="mt-2 w-full text-lg font-bold tracking-wide border rounded-lg bg-[var(--color-accent)] text-white hover:opacity-90 transition"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Entry'}
+              </button>
+            </form>
+
+            {!user && !hasStartedJournaling && (
+              <PaymentPlans 
+                showPricingModal={showPricingModal}
+                setShowPricingModal={setShowPricingModal}
+              />
+            )}
+
+            {/* Only show entry for selected date as a page */}
+            {entriesForSelectedDate.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[var(--color-muted)]">No entry for this day. Start writing your thoughts above!</p>
+              </div>
+            ) : (
+              entriesForSelectedDate.map((entry, idx) => (
+                <div key={entry.id} className="entry-card group transition-all duration-200">
+                  <div className="flex items-start justify-between mb-2">
+                    <time className="text-xs text-[var(--color-muted)] font-medium" style={{ fontFamily: 'Merriweather, Georgia, serif' }}>
+                      {formatDate(entry.created_at)}
+                    </time>
+                    <button
+                      onClick={() => deleteEntry(entry.id)}
+                      className="text-red-400 hover:text-red-300 text-xs font-semibold border-none bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <p className="whitespace-pre-wrap text-[var(--color-text-light)] dark:text-[var(--color-text-dark)] leading-relaxed text-base" style={{ fontFamily: 'Merriweather, Georgia, serif' }}>
+                    {entry.content}
+                  </p>
+                </div>
+              ))
+            )}
+            {/* Navigation for previous/next day with entries */}
+            <div className="flex justify-between mt-6">
+              <button
+                type="button"
+                className="text-[var(--color-accent)] font-bold hover:underline"
+                onClick={() => {
+                  // Find previous day with entry
+                  const prev = entries
+                    .map(e => new Date(e.created_at))
+                    .filter(d => d < selectedDate)
+                    .sort((a, b) => b.getTime() - a.getTime())[0];
+                  if (prev) setSelectedDate(prev);
+                }}
+                disabled={entries.filter(e => new Date(e.created_at) < selectedDate).length === 0}
+              >
+                ← Previous
+              </button>
+              <button
+                type="button"
+                className="text-[var(--color-accent)] font-bold hover:underline"
+                onClick={() => {
+                  // Find next day with entry
+                  const next = entries
+                    .map(e => new Date(e.created_at))
+                    .filter(d => d > selectedDate)
+                    .sort((a, b) => a.getTime() - b.getTime())[0];
+                  if (next) setSelectedDate(next);
+                }}
+                disabled={entries.filter(e => new Date(e.created_at) > selectedDate).length === 0}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

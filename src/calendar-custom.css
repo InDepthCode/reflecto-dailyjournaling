@@ -1,0 +1,148 @@
+/* Custom Diary Calendar Styles */
+.custom-diary-calendar {
+  min-width: 420px;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 2rem 2rem;
+  background: var(--color-page-light);
+  border-radius: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(191, 167, 106, 0.13);
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 1.1rem;
+}
+.dark .custom-diary-calendar {
+  background: var(--color-page-dark);
+}
+.custom-diary-calendar .react-calendar__navigation {
+  margin-bottom: 1.7rem;
+  background: none;
+  border: none;
+}
+.custom-diary-calendar .react-calendar__navigation button {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.2rem;
+  color: var(--color-accent);
+  background: transparent;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 1rem;
+  margin: 0 0.2rem;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  box-shadow: none;
+}
+.custom-diary-calendar .react-calendar__navigation button:enabled:hover,
+.custom-diary-calendar .react-calendar__navigation button:focus {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  outline: none;
+}
+.custom-diary-calendar .react-calendar__navigation button:disabled {
+  background: #bfa76a33; /* faded accent */
+  color: #bfa76a99;
+  border-color: #bfa76a33;
+  cursor: not-allowed;
+}
+/* Make the navigation label (month/year) look like plain text */
+.custom-diary-calendar .react-calendar__navigation__label {
+  background: none !important;
+  border: none !important;
+  color: var(--color-accent) !important;
+  font-weight: bold;
+  font-size: 1.1rem;
+  box-shadow: none !important;
+  cursor: default !important;
+  padding: 0 0.5rem !important;
+}
+
+.custom-diary-calendar .react-calendar__navigation__label:enabled:hover,
+.custom-diary-calendar .react-calendar__navigation__label:focus {
+  background: none !important;
+  color: var(--color-accent) !important;
+  border: none !important;
+  outline: none !important;
+}
+.custom-diary-calendar .react-calendar__month-view__weekdays {
+  font-weight: 600;
+  color: var(--color-accent);
+  font-size: 1.08rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.7rem;
+  background: none;
+  border: none;
+}
+.custom-diary-calendar .react-calendar__tile {
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0.6rem 0.2rem;
+  margin: 0.22rem;
+  border-radius: 1.2rem;
+  background: none;
+  color: var(--color-text-light);
+  font-weight: 500;
+  border: none !important;
+  box-shadow: none !important;
+  transition: background 0.2s, color 0.2s;
+}
+.custom-diary-calendar .react-calendar__tile--active,
+.custom-diary-calendar .react-calendar__tile--now {
+  background: var(--color-accent) !important;
+  color: #fff !important;
+  border: none !important;
+}
+.custom-diary-calendar .react-calendar__tile:enabled:hover,
+.custom-diary-calendar .react-calendar__tile:focus {
+  background: #f5e9c6;
+  color: var(--color-text-light);
+  border: none !important;
+}
+.custom-diary-calendar .react-calendar__tile--hasActive {
+  border: none !important;
+}
+
+/* Modal tweaks for more premium look */
+.react-calendar-modal {
+  background: var(--color-page-light);
+  border-radius: 2.2rem;
+  box-shadow: 0 12px 48px 0 rgba(191, 167, 106, 0.18);
+  padding: 2.5rem 2rem 2rem 2rem;
+  min-width: 420px;
+  max-width: 500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.dark .react-calendar-modal {
+  background: var(--color-page-dark);
+}
+
+.react-calendar-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1001;
+}
+
+.react-calendar-modal .close-btn {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  cursor: pointer;
+  z-index: 1003;
+}
+
+.react-calendar-modal > .custom-diary-calendar {
+  margin: 0 auto;
+} 
